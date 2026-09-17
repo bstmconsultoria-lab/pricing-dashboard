@@ -16,11 +16,9 @@ VALID_USERS = {
     "consultora": "Amand@2026"
 }
 
-# Inicializa o cofre de segurança na memória do navegador
 if "autenticado" not in st.session_state:
     st.session_state["autenticado"] = False
 
-# Se NÃO estiver autenticado, desenha o login e MATA a execução
 if not st.session_state["autenticado"]:
     st.markdown("<br><br><br>", unsafe_allow_html=True)
     st.markdown("<h2 style='text-align: center; color: #0f172a;'>🔒 Acesso Restrito - Diretoria</h2>", unsafe_allow_html=True)
@@ -36,32 +34,24 @@ if not st.session_state["autenticado"]:
             if submit:
                 if username in VALID_USERS and password == VALID_USERS[username]:
                     st.session_state["autenticado"] = True
-                    st.rerun() # Reinicia a página com a chave liberada
+                    st.rerun() 
                 else:
                     st.error("Usuário ou senha incorretos. Acesso negado.")
     
-    # Esta linha é o muro. Nada abaixo dela roda sem a senha.
     st.stop()
 
 # ==========================================================
 # 3. CORPO DO PAINEL (SÓ RODA SE A BARREIRA FOR VENCIDA)
 # ==========================================================
 
-# Estilos Visuais do Painel (Dark Mode Total e Animações CSS Suaves)
 st.markdown("""
 <style>
-    /* Fundo principal e Fundo do Cabeçalho */
     .stApp { background-color: #0b0f19; }
     [data-testid="stHeader"] { background-color: #0b0f19 !important; }
-    
-    /* Fundo da Barra Lateral */
     [data-testid="stSidebar"] { background-color: #111827 !important; }
-
-    /* Textos gerais */
     h1, h2, h3, h4, p, label, .stMarkdown, .stTab, span { color: #E2E8F0 !important; }
     h1, h3 { color: #FFD700 !important; } 
     
-    /* Caixas de Input de Números - Animação de Foco Sutil */
     .stNumberInput > div > div > input { 
         color: #FFD700 !important; 
         background-color: #1E293B !important; 
@@ -73,14 +63,11 @@ st.markdown("""
         box-shadow: 0 0 8px rgba(255, 215, 0, 0.2) !important;
     }
     
-    /* Métricas do HUD */
     [data-testid="stMetricValue"] { color: #FFD700 !important; }
     div[data-testid="stMetricDelta"] > div { font-size: 1.2rem !important; }
     
-    /* Tabelas */
     .stDataFrame { background-color: #1E293B; }
     
-    /* Botões - Transição mais leve */
     .stButton > button { 
         background-color: #1E293B !important; 
         color: #FFD700 !important; 
@@ -97,13 +84,11 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Barra Lateral (Menu de Comando)
 with st.sidebar:
     st.markdown("### 🛡️ Painel do Mentor")
     st.write("Conectado como: **Diretoria**")
     st.markdown("---")
     
-    # Botão de Logout seguro
     if st.button("🔒 Encerrar Sessão (Logout)", use_container_width=True):
         st.session_state["autenticado"] = False
         st.rerun()
@@ -112,13 +97,12 @@ with st.sidebar:
     st.markdown("### 🎛️ Calibração de Sinais Vitais")
     carga_tributaria = st.number_input("Carga Tributária (%)", min_value=0.0, max_value=50.0, value=18.9, step=0.1, format="%.2f")
     taxa_gateway = st.number_input("Taxa de Gateway / Cartão (%)", min_value=0.0, max_value=20.0, value=1.7, step=0.1, format="%.2f")
+    desconto_aplicado = st.number_input("Desconto Aplicado (%)", min_value=0.0, max_value=99.0, value=0.0, step=0.1, format="%.2f", help="Qualquer desconto dado corrói a base de cálculo. O motor vai recalcular o impacto.")
     margem_liquida_alvo = st.number_input("Margem Líquida Alvo (%)", min_value=0.0, max_value=80.0, value=30.0, step=0.1, format="%.2f")
 
-# Cabeçalho do Painel
 st.title("Painel de Comando: Precificação Estratégica e Defesa de Caixa")
-st.markdown("Insira os parâmetros operacionais na barra lateral esquerda. O motor financeiro recalcula a margem e a rentabilidade em tempo real.")
+st.markdown("Insira os parâmetros operacionais na barra lateral. O motor financeiro recalcula a margem e a rentabilidade em tempo real sobre a base da planilha.")
 
-# Motor de Dados
 @st.cache_data
 def carregar_dados():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjH3b8-lsdDWGbw2xt5NYF-xZTmUBpeseXRaTyX4N-NTEsSreuwaP93GgQX8UV6A/pub?gid=272968961&single=true&output=csv"
@@ -165,30 +149,40 @@ def limpar_moeda(valor):
     except:
         return 0.0
 
-# Processamento de Margem
-fator_deducao = (carga_tributaria + taxa_gateway + margem_liquida_alvo) / 100
+# ==========================================================
+# 4. MOTOR FINANCEIRO (CÁLCULOS DINÂMICOS)
+# ==========================================================
+
+fator_deducao_ideal = (carga_tributaria + taxa_gateway + margem_liquida_alvo + desconto_aplicado) / 100
 
 tab1, tab2 = st.tabs(["🎯 Simulador de Cenários e Gráficos", "🗄️ Espelho da Planilha (Auditoria)"])
 
 with tab1:
-    if fator_deducao >= 1.0:
-        st.error("⚠️ CÓDIGO AZUL: A soma de Impostos, Taxas e Margem atinge ou ultrapassa 100%. Sobrevivência matemática impossível.")
+    if fator_deducao_ideal >= 1.0:
+        st.error("⚠️ CÓDIGO AZUL: A soma de Impostos, Taxas, Margem e Desconto ultrapassa 100%. O Preço Ideal tende ao infinito (Falência Matemática).")
     else:
         df_simulacao = df_base.copy()
         
+        # Resgatando a Base Real da Planilha
         if 'Valor do produto' in df_simulacao.columns:
-            df_simulacao['Preço Praticado (Atual)'] = df_simulacao['Valor do produto'].apply(limpar_moeda)
+            df_simulacao['Valor do Produto'] = df_simulacao['Valor do produto'].apply(limpar_moeda)
         else:
-            df_simulacao['Preço Praticado (Atual)'] = 0.0
+            df_simulacao['Valor do Produto'] = 0.0
             
         if 'Custo Fixo Unitário' in df_simulacao.columns:
             df_simulacao['Custo Base'] = df_simulacao['Custo Fixo Unitário'].apply(limpar_moeda)
         else:
             df_simulacao['Custo Base'] = 500.0 
             
-        df_simulacao['Preço Ideal (Reativo)'] = df_simulacao['Custo Base'] / (1 - fator_deducao)
-        df_simulacao['Custos Variáveis Atuais'] = df_simulacao['Preço Praticado (Atual)'] * ((carga_tributaria + taxa_gateway) / 100)
-        df_simulacao['Margem de Contribuição (R$)'] = df_simulacao['Preço Praticado (Atual)'] - df_simulacao['Custos Variáveis Atuais']
+        # O impacto direto das variáveis no cenário projetado
+        df_simulacao['Preço Ideal'] = df_simulacao['Custo Base'] / (1 - fator_deducao_ideal)
+        
+        # O impacto real e atual: Aplicando o Desconto no Valor do Produto que eles já cobram hoje
+        df_simulacao['Receita Efetiva (Atual)'] = df_simulacao['Valor do Produto'] * (1 - (desconto_aplicado / 100))
+        df_simulacao['Custos Variáveis Atuais'] = df_simulacao['Receita Efetiva (Atual)'] * ((carga_tributaria + taxa_gateway) / 100)
+        
+        # Métricas vitais impactadas
+        df_simulacao['Margem de Contribuição (R$)'] = df_simulacao['Receita Efetiva (Atual)'] - df_simulacao['Custos Variáveis Atuais']
         df_simulacao['Lucro Líquido Real (R$)'] = df_simulacao['Margem de Contribuição (R$)'] - df_simulacao['Custo Base']
         
         if 'Nome do produto' in df_simulacao.columns:
@@ -205,17 +199,17 @@ with tab1:
             
             with hud_col1:
                 st.metric(
-                    label="Preço Praticado / Alvo Ideal",
-                    value=f"R$ {df_alvo['Preço Praticado (Atual)']:,.2f}",
-                    delta=f"Alvo Ideal: R$ {df_alvo['Preço Ideal (Reativo)']:,.2f}",
+                    label="Valor do Produto / Preço Ideal",
+                    value=f"R$ {df_alvo['Valor do Produto']:,.2f}",
+                    delta=f"Preço Ideal: R$ {df_alvo['Preço Ideal']:,.2f}",
                     delta_color="off"
                 )
             
             with hud_col2:
                 st.metric(
-                    label="TETO DO CAC (Custo de Aquisição Máximo)",
+                    label="TETO DO CAC (Margem de Contribuição)",
                     value=f"R$ {df_alvo['Margem de Contribuição (R$)']:,.2f}",
-                    delta="Limite Máximo Seguro",
+                    delta="Limite Máximo Seguro p/ Aquisição",
                     delta_color="normal"
                 )
                 
@@ -231,11 +225,11 @@ with tab1:
             df_plot = df_valido.head(10)
             
             st.markdown("---")
-            st.markdown("### 📈 Diagnóstico de Preço: Praticado vs. Ideal (Sobrevivência)")
+            st.markdown("### 📈 Diagnóstico de Precificação (Impacto das Variáveis no Preço Ideal)")
             
             fig1 = px.bar(
-                df_plot, x='Nome do produto', y=['Preço Praticado (Atual)', 'Preço Ideal (Reativo)'],
-                barmode='group', color_discrete_map={'Preço Praticado (Atual)': '#ef4444', 'Preço Ideal (Reativo)': '#3b82f6'}
+                df_plot, x='Nome do produto', y=['Valor do Produto', 'Preço Ideal'],
+                barmode='group', color_discrete_map={'Valor do Produto': '#ef4444', 'Preço Ideal': '#3b82f6'}
             )
             
             fig1.update_traces(texttemplate='R$ %{y:,.2f}', textposition='outside', textfont=dict(color="#E2E8F0"))
@@ -243,20 +237,20 @@ with tab1:
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color="#E2E8F0"),
                 legend=dict(title="Cenário", font=dict(color="#FFD700"), bgcolor="rgba(0,0,0,0)"),
                 xaxis_tickangle=-25, xaxis_title="", yaxis_title="Valor (R$)", height=500, margin=dict(t=30),
-                uirevision='constant', # Mantém o estado do gráfico para animar os dados
-                transition=dict(duration=500, easing="sin-in-out") # Movimento mais sutil e rápido
+                uirevision='constant', 
+                transition=dict(duration=500, easing="sin-in-out") 
             )
             st.plotly_chart(fig1, use_container_width=True)
 
             st.markdown("---")
-            st.markdown("### 🧬 Radiografia de Rentabilidade: Contribuição vs. Lucro Líquido Real")
+            st.markdown("### 🧬 Radiografia de Rentabilidade (Impacto em Tempo Real)")
             
             fig2 = go.Figure()
             
             fig2.add_trace(go.Bar(
                 x=df_plot['Nome do produto'],
                 y=df_plot['Margem de Contribuição (R$)'],
-                name='Margem de Contribuição (R$)',
+                name='Teto do CAC (Margem Contrib.)',
                 marker_color='#FFD700', 
                 text=df_plot['Margem de Contribuição (R$)'],
                 texttemplate='R$ %{text:,.2f}', textposition='outside', textfont=dict(color="#FFD700")
@@ -275,8 +269,8 @@ with tab1:
                 barmode='group', plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color="#E2E8F0"),
                 legend=dict(font=dict(color="#E2E8F0"), bgcolor="rgba(0,0,0,0)"),
                 xaxis_tickangle=-25, xaxis_title="", yaxis_title="Rentabilidade (R$)", height=550, margin=dict(t=30),
-                uirevision='constant', # Mantém o estado do gráfico para animar os dados
-                transition=dict(duration=500, easing="sin-in-out") # Movimento mais sutil e rápido
+                uirevision='constant', 
+                transition=dict(duration=500, easing="sin-in-out") 
             )
             st.plotly_chart(fig2, use_container_width=True)
 
