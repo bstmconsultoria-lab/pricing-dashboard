@@ -23,8 +23,8 @@ if "autenticado" not in st.session_state:
 # Se NÃO estiver autenticado, desenha o login e MATA a execução
 if not st.session_state["autenticado"]:
     st.markdown("<br><br><br>", unsafe_allow_html=True)
-    st.markdown("<h2 style='text-align: center; color: #FFD700;'>🔒 Acesso Restrito - Diretoria</h2>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align: center; color: #E2E8F0;'>Painel Estratégico de Margem e Precificação</p>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #0f172a;'>🔒 Acesso Restrito - Diretoria</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #334155;'>Painel Estratégico de Margem e Precificação</p>", unsafe_allow_html=True)
     
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
