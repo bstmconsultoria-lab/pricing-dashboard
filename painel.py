@@ -47,16 +47,46 @@ if not st.session_state["autenticado"]:
 # 3. CORPO DO PAINEL (SÓ RODA SE A BARREIRA FOR VENCIDA)
 # ==========================================================
 
-# Estilos Visuais do Painel
+# Estilos Visuais do Painel (Corrigido para Dark Mode Total)
 st.markdown("""
 <style>
+    /* Fundo principal e Fundo do Cabeçalho */
     .stApp { background-color: #0b0f19; }
-    h1, h2, h3, h4, p, label, .stMarkdown, .stTab { color: #E2E8F0 !important; }
+    [data-testid="stHeader"] { background-color: #0b0f19 !important; }
+    
+    /* Fundo da Barra Lateral (Correção de Contraste) */
+    [data-testid="stSidebar"] { background-color: #111827 !important; }
+
+    /* Textos gerais */
+    h1, h2, h3, h4, p, label, .stMarkdown, .stTab, span { color: #E2E8F0 !important; }
     h1, h3 { color: #FFD700 !important; } 
-    .stNumberInput > div > div > input { color: #FFD700 !important; background-color: #1E293B !important; border: 1px solid #FFD700 !important; }
+    
+    /* Caixas de Input de Números */
+    .stNumberInput > div > div > input { 
+        color: #FFD700 !important; 
+        background-color: #1E293B !important; 
+        border: 1px solid #FFD700 !important; 
+    }
+    
+    /* Métricas do HUD */
     [data-testid="stMetricValue"] { color: #FFD700 !important; }
-    .stDataFrame { background-color: #1E293B; }
     div[data-testid="stMetricDelta"] > div { font-size: 1.2rem !important; }
+    
+    /* Tabelas */
+    .stDataFrame { background-color: #1E293B; }
+    
+    /* Botões (Logout e Login) */
+    .stButton > button { 
+        background-color: #1E293B !important; 
+        color: #FFD700 !important; 
+        border: 1px solid #FFD700 !important; 
+        font-weight: bold;
+    }
+    .stButton > button:hover { 
+        background-color: #FFD700 !important; 
+        color: #0b0f19 !important; 
+        border: 1px solid #E2E8F0 !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
