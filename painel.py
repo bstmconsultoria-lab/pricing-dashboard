@@ -3,9 +3,51 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
-# --- CONFIGURAÇÃO DA PÁGINA E ESTÉTICA DE TERMINAL ---
-st.set_page_config(page_title="Painel de Controle - Operação e Margem", layout="wide")
+# ==========================================================
+# 1. CONFIGURAÇÃO DA PÁGINA (DEVE SER A PRIMEIRA LINHA)
+# ==========================================================
+st.set_page_config(page_title="Painel de Comando - Operação e Margem", layout="wide", initial_sidebar_state="expanded")
 
+# ==========================================================
+# 2. SISTEMA DE AUTENTICAÇÃO BLINDADO (BARREIRA LINEAR)
+# ==========================================================
+VALID_USERS = {
+    "pedro": "An@140919",
+    "consultora": "Amand@2026"
+}
+
+# Inicializa o cofre de segurança na memória do navegador
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+# Se NÃO estiver autenticado, desenha o login e MATA a execução
+if not st.session_state["autenticado"]:
+    st.markdown("<br><br><br>", unsafe_allow_html=True)
+    st.markdown("<h2 style='text-align: center; color: #FFD700;'>🔒 Acesso Restrito - Diretoria</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #E2E8F0;'>Painel Estratégico de Margem e Precificação</p>", unsafe_allow_html=True)
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        with st.form("login_form"):
+            username = st.text_input("Usuário").strip().lower()
+            password = st.text_input("Senha", type="password")
+            submit = st.form_submit_button("Entrar no Painel", use_container_width=True)
+            
+            if submit:
+                if username in VALID_USERS and password == VALID_USERS[username]:
+                    st.session_state["autenticado"] = True
+                    st.rerun() # Reinicia a página com a chave liberada
+                else:
+                    st.error("Usuário ou senha incorretos. Acesso negado.")
+    
+    # Esta linha é o muro. Nada abaixo dela roda sem a senha.
+    st.stop()
+
+# ==========================================================
+# 3. CORPO DO PAINEL (SÓ RODA SE A BARREIRA FOR VENCIDA)
+# ==========================================================
+
+# Estilos Visuais do Painel
 st.markdown("""
 <style>
     .stApp { background-color: #0b0f19; }
@@ -15,13 +57,31 @@ st.markdown("""
     [data-testid="stMetricValue"] { color: #FFD700 !important; }
     .stDataFrame { background-color: #1E293B; }
     div[data-testid="stMetricDelta"] > div { font-size: 1.2rem !important; }
-    .legenda-tatica { font-size: 0.85rem; color: #94a3b8; margin-top: -15px; display: block; line-height: 1.2; }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("Painel de Comando: Precificação Estratégica e Defesa de Caixa")
-st.markdown("Insira os parâmetros operacionais. O motor financeiro recalcula a margem e a rentabilidade em tempo real.")
+# Barra Lateral (Menu de Comando)
+with st.sidebar:
+    st.markdown("### 🛡️ Painel do Mentor")
+    st.write("Conectado como: **Diretoria**")
+    st.markdown("---")
+    
+    # Botão de Logout seguro
+    if st.button("🔒 Encerrar Sessão (Logout)", use_container_width=True):
+        st.session_state["autenticado"] = False
+        st.rerun()
+        
+    st.markdown("---")
+    st.markdown("### 🎛️ Calibração de Sinais Vitais")
+    carga_tributaria = st.number_input("Carga Tributária (%)", min_value=0.0, max_value=50.0, value=18.9, step=0.1, format="%.2f")
+    taxa_gateway = st.number_input("Taxa de Gateway / Cartão (%)", min_value=0.0, max_value=20.0, value=1.7, step=0.1, format="%.2f")
+    margem_liquida_alvo = st.number_input("Margem Líquida Alvo (%)", min_value=0.0, max_value=80.0, value=30.0, step=0.1, format="%.2f")
 
+# Cabeçalho do Painel
+st.title("Painel de Comando: Precificação Estratégica e Defesa de Caixa")
+st.markdown("Insira os parâmetros operacionais na barra lateral esquerda. O motor financeiro recalcula a margem e a rentabilidade em tempo real.")
+
+# Motor de Dados
 @st.cache_data
 def carregar_dados():
     url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSjH3b8-lsdDWGbw2xt5NYF-xZTmUBpeseXRaTyX4N-NTEsSreuwaP93GgQX8UV6A/pub?gid=272968961&single=true&output=csv"
@@ -68,24 +128,14 @@ def limpar_moeda(valor):
     except:
         return 0.0
 
-# --- SINAIS VITAIS (ENTRADAS NUMÉRICAS REATIVAS) ---
-st.markdown("### 🎛️ Calibração de Sinais Vitais")
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    carga_tributaria = st.number_input("Carga Tributária (%)", min_value=0.0, max_value=50.0, value=18.9, step=0.1, format="%.2f")
-with col2:
-    taxa_gateway = st.number_input("Taxa de Gateway / Cartão (%)", min_value=0.0, max_value=20.0, value=1.7, step=0.1, format="%.2f")
-with col3:
-    margem_liquida_alvo = st.number_input("Margem Líquida Alvo (%)", min_value=0.0, max_value=80.0, value=30.0, step=0.1, format="%.2f")
-
+# Processamento de Margem
 fator_deducao = (carga_tributaria + taxa_gateway + margem_liquida_alvo) / 100
 
 tab1, tab2 = st.tabs(["🎯 Simulador de Cenários e Gráficos", "🗄️ Espelho da Planilha (Auditoria)"])
 
 with tab1:
     if fator_deducao >= 1.0:
-        st.error("⚠️ CÓDIGO AZUL: A soma de Impostos, Taxas e Margem atinge 100%. Sobrevivência matemática impossível.")
+        st.error("⚠️ CÓDIGO AZUL: A soma de Impostos, Taxas e Margem atinge ou ultrapassa 100%. Sobrevivência matemática impossível.")
     else:
         df_simulacao = df_base.copy()
         
@@ -108,7 +158,6 @@ with tab1:
             df_valido = df_simulacao.dropna(subset=['Nome do produto']).copy()
             df_valido = df_valido[df_valido['Nome do produto'].str.strip() != ""]
             
-            # --- HUD: PAINEL TÁTICO POR PRODUTO ---
             st.markdown("---")
             st.markdown("### 🛩️ HUD: Sinais Vitais por Produto")
             
@@ -122,18 +171,18 @@ with tab1:
                     label="Preço Praticado / Alvo Ideal",
                     value=f"R$ {df_alvo['Preço Praticado (Atual)']:,.2f}",
                     delta=f"Alvo Ideal: R$ {df_alvo['Preço Ideal (Reativo)']:,.2f}",
-                    delta_color="off"
+                    delta_color="off",
+                    help="O valor menor é o praticado hoje. O Delta é o preço que defende a margem escolhida."
                 )
-                st.markdown("<span class='legenda-tatica'>O valor menor é o praticado hoje. O Delta é o piso que garante a sobrevivência da operação.</span>", unsafe_allow_html=True)
             
             with hud_col2:
                 st.metric(
                     label="TETO DO CAC (Custo de Aquisição Máximo)",
                     value=f"R$ {df_alvo['Margem de Contribuição (R$)']:,.2f}",
                     delta="Limite Máximo Seguro",
-                    delta_color="normal"
+                    delta_color="normal",
+                    help="Se a equipe de marketing gastar mais do que isso para adquirir um aluno, a escola queima caixa instantaneamente a cada venda."
                 )
-                st.markdown("<span class='legenda-tatica'>Se o tráfego gastar mais do que isso para converter, a escola queima caixa instantaneamente.</span>", unsafe_allow_html=True)
                 
             with hud_col3:
                 lucro_real = df_alvo['Lucro Líquido Real (R$)']
@@ -141,11 +190,10 @@ with tab1:
                     label="Lucro Líquido Real (Por Matrícula)",
                     value=f"R$ {lucro_real:,.2f}",
                     delta="OPERAÇÃO SANGRA CAIXA" if lucro_real < 0 else "GERAÇÃO DE CAIXA POSITIVA",
-                    delta_color="inverse" if lucro_real < 0 else "normal"
+                    delta_color="inverse" if lucro_real < 0 else "normal",
+                    help="Se o número estiver vermelho, a escola paga do próprio bolso para o aluno estudar."
                 )
-                st.markdown("<span class='legenda-tatica'>Valores negativos indicam que o dono está pagando do próprio bolso para o aluno estudar.</span>", unsafe_allow_html=True)
 
-            # --- GRÁFICOS VISUAIS ---
             df_plot = df_valido.head(10)
             
             st.markdown("---")
@@ -166,7 +214,6 @@ with tab1:
 
             st.markdown("---")
             st.markdown("### 🧬 Radiografia de Rentabilidade: Contribuição vs. Lucro Líquido Real")
-            st.markdown("A barra amarela sustenta a operação. A barra ao lado (verde/vermelha) dita se a escola lucra ou paga para trabalhar.")
             
             fig2 = go.Figure()
             
