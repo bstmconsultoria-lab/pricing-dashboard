@@ -47,14 +47,14 @@ if not st.session_state["autenticado"]:
 # 3. CORPO DO PAINEL (SÓ RODA SE A BARREIRA FOR VENCIDA)
 # ==========================================================
 
-# Estilos Visuais do Painel (Corrigido para Dark Mode Total)
+# Estilos Visuais do Painel (Dark Mode Total)
 st.markdown("""
 <style>
     /* Fundo principal e Fundo do Cabeçalho */
     .stApp { background-color: #0b0f19; }
     [data-testid="stHeader"] { background-color: #0b0f19 !important; }
     
-    /* Fundo da Barra Lateral (Correção de Contraste) */
+    /* Fundo da Barra Lateral */
     [data-testid="stSidebar"] { background-color: #111827 !important; }
 
     /* Textos gerais */
@@ -66,6 +66,7 @@ st.markdown("""
         color: #FFD700 !important; 
         background-color: #1E293B !important; 
         border: 1px solid #FFD700 !important; 
+        transition: all 0.3s ease;
     }
     
     /* Métricas do HUD */
@@ -75,12 +76,13 @@ st.markdown("""
     /* Tabelas */
     .stDataFrame { background-color: #1E293B; }
     
-    /* Botões (Logout e Login) */
+    /* Botões */
     .stButton > button { 
         background-color: #1E293B !important; 
         color: #FFD700 !important; 
         border: 1px solid #FFD700 !important; 
         font-weight: bold;
+        transition: all 0.3s ease;
     }
     .stButton > button:hover { 
         background-color: #FFD700 !important; 
@@ -201,8 +203,7 @@ with tab1:
                     label="Preço Praticado / Alvo Ideal",
                     value=f"R$ {df_alvo['Preço Praticado (Atual)']:,.2f}",
                     delta=f"Alvo Ideal: R$ {df_alvo['Preço Ideal (Reativo)']:,.2f}",
-                    delta_color="off",
-                    help="O valor menor é o praticado hoje. O Delta é o preço que defende a margem escolhida."
+                    delta_color="off"
                 )
             
             with hud_col2:
@@ -210,8 +211,7 @@ with tab1:
                     label="TETO DO CAC (Custo de Aquisição Máximo)",
                     value=f"R$ {df_alvo['Margem de Contribuição (R$)']:,.2f}",
                     delta="Limite Máximo Seguro",
-                    delta_color="normal",
-                    help="Se a equipe de marketing gastar mais do que isso para adquirir um aluno, a escola queima caixa instantaneamente a cada venda."
+                    delta_color="normal"
                 )
                 
             with hud_col3:
@@ -220,8 +220,7 @@ with tab1:
                     label="Lucro Líquido Real (Por Matrícula)",
                     value=f"R$ {lucro_real:,.2f}",
                     delta="OPERAÇÃO SANGRA CAIXA" if lucro_real < 0 else "GERAÇÃO DE CAIXA POSITIVA",
-                    delta_color="inverse" if lucro_real < 0 else "normal",
-                    help="Se o número estiver vermelho, a escola paga do próprio bolso para o aluno estudar."
+                    delta_color="inverse" if lucro_real < 0 else "normal"
                 )
 
             df_plot = df_valido.head(10)
@@ -238,7 +237,8 @@ with tab1:
             fig1.update_layout(
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color="#E2E8F0"),
                 legend=dict(title="Cenário", font=dict(color="#FFD700"), bgcolor="rgba(0,0,0,0)"),
-                xaxis_tickangle=-25, xaxis_title="", yaxis_title="Valor (R$)", height=500, margin=dict(t=30)
+                xaxis_tickangle=-25, xaxis_title="", yaxis_title="Valor (R$)", height=500, margin=dict(t=30),
+                transition=dict(duration=800, easing="cubic-in-out") # Animação injetada
             )
             st.plotly_chart(fig1, use_container_width=True)
 
@@ -268,7 +268,8 @@ with tab1:
             fig2.update_layout(
                 barmode='group', plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color="#E2E8F0"),
                 legend=dict(font=dict(color="#E2E8F0"), bgcolor="rgba(0,0,0,0)"),
-                xaxis_tickangle=-25, xaxis_title="", yaxis_title="Rentabilidade (R$)", height=550, margin=dict(t=30)
+                xaxis_tickangle=-25, xaxis_title="", yaxis_title="Rentabilidade (R$)", height=550, margin=dict(t=30),
+                transition=dict(duration=800, easing="cubic-in-out") # Animação injetada
             )
             st.plotly_chart(fig2, use_container_width=True)
 
