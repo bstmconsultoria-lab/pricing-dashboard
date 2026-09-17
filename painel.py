@@ -47,7 +47,7 @@ if not st.session_state["autenticado"]:
 # 3. CORPO DO PAINEL (SÓ RODA SE A BARREIRA FOR VENCIDA)
 # ==========================================================
 
-# Estilos Visuais do Painel (Dark Mode Total)
+# Estilos Visuais do Painel (Dark Mode Total e Animações CSS Suaves)
 st.markdown("""
 <style>
     /* Fundo principal e Fundo do Cabeçalho */
@@ -61,12 +61,16 @@ st.markdown("""
     h1, h2, h3, h4, p, label, .stMarkdown, .stTab, span { color: #E2E8F0 !important; }
     h1, h3 { color: #FFD700 !important; } 
     
-    /* Caixas de Input de Números */
+    /* Caixas de Input de Números - Animação de Foco Sutil */
     .stNumberInput > div > div > input { 
         color: #FFD700 !important; 
         background-color: #1E293B !important; 
+        border: 1px solid #1E293B !important; 
+        transition: all 0.4s ease-in-out;
+    }
+    .stNumberInput > div > div > input:focus {
         border: 1px solid #FFD700 !important; 
-        transition: all 0.3s ease;
+        box-shadow: 0 0 8px rgba(255, 215, 0, 0.2) !important;
     }
     
     /* Métricas do HUD */
@@ -76,18 +80,19 @@ st.markdown("""
     /* Tabelas */
     .stDataFrame { background-color: #1E293B; }
     
-    /* Botões */
+    /* Botões - Transição mais leve */
     .stButton > button { 
         background-color: #1E293B !important; 
         color: #FFD700 !important; 
         border: 1px solid #FFD700 !important; 
         font-weight: bold;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     .stButton > button:hover { 
         background-color: #FFD700 !important; 
         color: #0b0f19 !important; 
-        border: 1px solid #E2E8F0 !important;
+        border: 1px solid #FFD700 !important;
+        transform: translateY(-1px);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -238,7 +243,8 @@ with tab1:
                 plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color="#E2E8F0"),
                 legend=dict(title="Cenário", font=dict(color="#FFD700"), bgcolor="rgba(0,0,0,0)"),
                 xaxis_tickangle=-25, xaxis_title="", yaxis_title="Valor (R$)", height=500, margin=dict(t=30),
-                transition=dict(duration=800, easing="cubic-in-out") # Animação injetada
+                uirevision='constant', # Mantém o estado do gráfico para animar os dados
+                transition=dict(duration=500, easing="sin-in-out") # Movimento mais sutil e rápido
             )
             st.plotly_chart(fig1, use_container_width=True)
 
@@ -269,7 +275,8 @@ with tab1:
                 barmode='group', plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)', font=dict(color="#E2E8F0"),
                 legend=dict(font=dict(color="#E2E8F0"), bgcolor="rgba(0,0,0,0)"),
                 xaxis_tickangle=-25, xaxis_title="", yaxis_title="Rentabilidade (R$)", height=550, margin=dict(t=30),
-                transition=dict(duration=800, easing="cubic-in-out") # Animação injetada
+                uirevision='constant', # Mantém o estado do gráfico para animar os dados
+                transition=dict(duration=500, easing="sin-in-out") # Movimento mais sutil e rápido
             )
             st.plotly_chart(fig2, use_container_width=True)
 
